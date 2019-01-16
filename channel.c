@@ -103,15 +103,18 @@ void handle_hw_ringbuf_write (u32 value)
 		printf("HwRingBuf Write Access Denied\n");
 }
 
-void handle_mfc_command(u32 cmd)
+void handle_mfc_command(u32 ClassidCmd)
 {
-	printf("Local address %08x, EA = %08x:%08x, Size=%08x, TagID=%08x, Cmd=%08x\n",
-		MFC_LSA, MFC_EAH, MFC_EAL, MFC_Size, MFC_TagID, cmd);
+	u16 class_id = (u16)((ClassidCmd & 0xFFFF0000) / 0x10000);
+	u16 cmd = (u16)(ClassidCmd & 0xFFFF);
+	printf("Local address %08x, EA = %08x:%08x, Size=%08x, TagID=%08x, ClassID=%04x, Cmd=%04x\n",
+		MFC_LSA, MFC_EAH, MFC_EAL, MFC_Size, MFC_TagID, class_id, cmd);
+		
 	switch (cmd)
 	{
 	case MFC_GET_CMD:
 		printf("DMA_GET\n");
-#if 0
+#if 1
 		{
 			FILE *f = fopen("dma", "rb");
 			if (!f)
@@ -128,7 +131,21 @@ void handle_mfc_command(u32 cmd)
 		break;
 	case MFC_PUT_CMD:
 		printf("DMA_PUT\n");
-		
+#if 1
+		{
+			FILE *fp = fopen("dma_out", "r+b");
+			if (!fp)
+				exit(1);
+			fseek(fp, MFC_EAL, SEEK_SET);
+			if (fwrite(ctx->ls + MFC_LSA, 1, MFC_Size, fp) != MFC_Size)
+			{
+				printf("write error\n");
+				exit(1);
+			}
+			fclose(fp);
+			
+		}
+#endif
 		break;
 	default:
 		printf("unknown command\n");
@@ -158,7 +175,6 @@ void channel_wrch(int ch, int reg)
 	{
 	case 7: //write decrementer
 		break;
-		
 	case 16:
 		printf("MFC_LSA %08x\n", r);
 		MFC_LSA = r;
@@ -180,7 +196,7 @@ void channel_wrch(int ch, int reg)
 		MFC_TagID =r ;
 		break;
 	case 21:
-		printf("MFC_Cmd %08x\n", r);
+		printf("MFC_Cmd %08x MFC_ClassID %08x\n", r & 0xFFFF, (r & 0xFFFF0000) / 0x10000);
 		handle_mfc_command(r);
 		break;
 	case 22:
@@ -196,6 +212,9 @@ void channel_wrch(int ch, int reg)
 		break;
 	case 27:
 		printf("MFC_RdAtomicStat %08x\n", r);
+		break;
+	case 30:
+		printf("SPU_WrOutIntrMbox %08x\n", r);
 		break;
 	case 64:
 		printf("HW_Cmd: ");
@@ -242,8 +261,9 @@ void channel_rdch(int ch, int reg)
 	ctx->reg[reg][3] = 0;
 }
 
-int channel_rchcnt(int ch)
+int channel_rchcnt(int reg, int ch)
 {
+	printf("CHANNEL: rchcnt r%d ch%d\n", reg, ch);
 	u32 r;
 	r = 0;
 	switch (ch)
@@ -257,6 +277,14 @@ int channel_rchcnt(int ch)
 		break;
 	case 27:
 		printf("MFC_RdAtomicStat %08x\n", r);
+		break;
+	case 29:
+		r = 1;
+		printf("SPU_RdInMbox %08x\n", r);
+		break;
+	case 30:
+		r =1;
+		printf("SPU_WrOutIntrMbox %08x\n", r);
 		break;
 	default:
 		printf("unknown channel %d\n", ch);

@@ -13,6 +13,6 @@
 
 void channel_wrch(int ch, int reg);
 void channel_rdch(int ch, int reg);
-int channel_rchcnt(int ch);
+int channel_rchcnt(int reg, int ch);
 
 #endif
