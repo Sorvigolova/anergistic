@@ -1052,7 +1052,7 @@
 	int i;
 
 	for (i = 0; i < 8; ++i)
-		rth[i] = -((s16)rah[i] == i10);
+		rth[i] = -((s16)rah[i] == (s16)i10);
 }
 01111001000,rr,ceqh,half
 {
@@ -1183,6 +1183,8 @@
 }
 01011000010,rr,fcgt,float
 {
+	#pragma GCC diagnostic push
+	#pragma GCC diagnostic ignored "-Wstrict-aliasing"
 	int itrue = 0xffffffff;
 	float ftrue = *(float*)&itrue;
 	int i;
@@ -1193,11 +1195,15 @@
 01111000010,rr,fceq,float
 {
 	//note: floats are not accurately modeled!
+	#pragma GCC diagnostic push
+	#pragma GCC diagnostic ignored "-Wstrict-aliasing"
 	int i; 
 	int itrue = 0xffffffff;
 	float ftrue = *(float*)&itrue;
 	for (i = 0; i < 4; ++i)
 		rtf[i] = raf[i]==rbf[i]?ftrue:0.0;
+
+	#pragma GCC diagnostic pop
 }
 00110111000,rr,frest,float
 {
