@@ -1191,6 +1191,7 @@
 	for (i = 0; i < 4; ++i)
 		rtf[i] = raf[i]>rbf[i]?ftrue:0.0;
 	
+	#pragma GCC diagnostic pop
 }
 01111000010,rr,fceq,float
 {
